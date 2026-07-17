@@ -1154,5 +1154,100 @@ function bindEvents(){
 
 render();
 </script>
+<script type="module">import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+ 
+// --- 1. INCOLLA QUI LA TUA CONFIGURAZIONE FIREBASE ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCg4RgWKVER2-gZJNi7xvV0yEk60JC1HX4",
+  authDomain: "convivio-f3fb8.firebaseapp.com",
+  projectId: "convivio-f3fb8",
+   storageBucket: "convivio-f3fb8.firebasestorage.app",
+  messagingSenderId: "430002485006",
+  appId: "1:430002485006:web:f1ced519aaf2fde082495f",
+  measurementId: "G-PN1R2BGPCD"
+};
+ 
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+ 
+// --- 2. LOGIN CON GOOGLE ---
+// Collega questa funzione al tuo pulsante "Accedi con Google" esistente
+export async function handleGoogleSignIn() {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    await registraOAggiornaUtente(user);
+    return user;
+  } catch (err) {
+    console.error("Errore login Google:", err);
+    throw err;
+  }
+}
+ 
+// --- 3. SALVA/AGGIORNA IL PROFILO UTENTE SU FIRESTORE ---
+async function registraOAggiornaUtente(user) {
+  const userRef = doc(db, "users", user.uid);
+  const existing = await getDoc(userRef);
+ 
+  const datiBase = {
+    nome: user.displayName || "",
+    email: user.email || "",
+    foto: user.photoURL || "",
+    ultimoAccesso: serverTimestamp()
+  };
+ 
+  if (!existing.exists()) {
+    // Prima registrazione: aggiungiamo la data di iscrizione, una volta sola
+    datiBase.dataRegistrazione = serverTimestamp();
+    datiBase.stato = "nuovo";
+  }
+ 
+  await setDoc(userRef, datiBase, { merge: true });
+}
+ 
+// --- 4. SALVA DATI AGGIUNTIVI DI ONBOARDING (città, università, preferenze) ---
+// Chiamala quando l'utente completa il form di profilo/matching che hai già in Convivio
+export async function saveOnboardingData(uid, { citta, universita, preferenze }) {
+  const userRef = doc(db, "users", uid);
+  await setDoc(
+    userRef,
+    {
+      citta: citta || null,
+      universita: universita || null,
+      preferenze: preferenze || null,
+      onboardingCompletato: true
+    },
+    { merge: true }
+  );
+}
+ 
+// --- 5. TIENE TRACCIA DI CHI È LOGGATO ORA (facoltativo, utile per la UI) ---
+export function ascoltaStatoAuth(callback) {
+  onAuthStateChanged(auth, (user) => {
+    callback(user); // user è null se nessuno è loggato
+  });
+}
+ 
+// --- 6. LOGOUT ---
+export async function handleSignOut() {
+  await signOut(auth);
+}
+
 </body>
 </html>
