@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Convivio — Registro Iscrizioni</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500;1,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1B2A4A;
+    --ink-soft: #4A5A78;
+    --parchment: #F7F4EE;
+    --paper: #FFFFFF;
+    --gold: #C9962D;
+    --gold-dark: #9C7522;
+    --sage: #5C7A5E;
+    --wine: #7A3B4F;
+    --line: #DCD5C4;
+    --shadow: 0 1px 2px rgba(27,42,74,0.06), 0 4px 12px rgba(27,42,74,0.05);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- LOGIN GATE ---------- */
+  #gate {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 24px;
+    text-align: center;
+    padding: 24px;
+  }
+  #gate .seal {
+    width: 64px; height: 64px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 26px;
+    color: var(--gold-dark);
+  }
+  #gate h1 {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 28px;
+    margin: 0;
+  }
+  #gate p { color: var(--ink-soft); margin: 0; max-width: 360px; font-size: 14px; }
+  .btn-google {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--ink); color: white;
+    border: none; padding: 12px 22px;
+    border-radius: 4px; font-size: 14px; font-weight: 500;
+    cursor: pointer; font-family: 'IBM Plex Sans', sans-serif;
+  }
+  .btn-google:hover { background: #101d38; }
+  #denied { display: none; color: var(--wine); font-size: 13px; max-width: 320px; }
+
+  /* ---------- LAYOUT ---------- */
+  #app { display: none; max-width: 1120px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  header.top {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 18px; margin-bottom: 32px;
+  }
+  header.top .brand-mark {
+    font-family: 'Fraunces', serif; font-style: italic; font-weight: 500;
+    font-size: 13px; color: var(--gold-dark); letter-spacing: 0.04em;
+    text-transform: uppercase; margin-bottom: 4px;
+  }
+  header.top h1 {
+    font-family: 'Fraunces', serif; font-weight: 600; font-size: 30px; margin: 0;
+  }
+  header.top .who { text-align: right; font-size: 12px; color: var(--ink-soft); }
+  header.top .who button {
+    background: none; border: none; color: var(--wine); font-size: 12px;
+    cursor: pointer; text-decoration: underline; padding: 0; margin-top: 4px;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+
+  /* ---------- STAT CARDS ---------- */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-bottom: 36px; }
+  .stat { background: var(--paper); padding: 18px 20px; }
+  .stat .num { font-family: 'Fraunces', serif; font-weight: 600; font-size: 32px; color: var(--ink); line-height: 1; }
+  .stat .label { font-size: 12px; color: var(--ink-soft); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.03em; }
+
+  /* ---------- FILTER BAR ---------- */
+  .filters { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+  .filters input, .filters select {
+    font-family: 'IBM Plex Sans', sans-serif; font-size: 13px;
+    padding: 9px 12px; border: 1px solid var(--line); border-radius: 3px;
+    background: var(--paper); color: var(--ink);
+  }
+  .filters input { flex: 1; min-width: 200px; }
+  .filters .count { margin-left: auto; font-size: 12px; color: var(--ink-soft); font-family: 'IBM Plex Mono', monospace; }
+
+  /* ---------- LEDGER TABLE ---------- */
+  table.ledger { width: 100%; border-collapse: collapse; background: var(--paper); box-shadow: var(--shadow); }
+  table.ledger thead th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--ink-soft); font-weight: 500; padding: 12px 16px;
+    border-bottom: 2px solid var(--ink);
+  }
+  table.ledger tbody td {
+    padding: 14px 16px; font-size: 13px; border-bottom: 1px dashed var(--line);
+    font-family: 'IBM Plex Mono', monospace; vertical-align: middle;
+  }
+  table.ledger tbody tr:hover { background: #FBF9F4; }
+  table.ledger td.nome { font-family: 'IBM Plex Sans', sans-serif; font-weight: 500; }
+  table.ledger td.nome span.email { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+
+  .stamp {
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1.5px solid; border-radius: 50%;
+    width: 30px; height: 30px; font-size: 9px; font-weight: 600;
+    transform: rotate(-8deg); letter-spacing: 0.02em;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+  .stamp.nuovo { color: var(--gold-dark); border-color: var(--gold); }
+  .stamp.attivo { color: var(--sage); border-color: var(--sage); }
+
+  #empty { display: none; text-align: center; padding: 60px 20px; color: var(--ink-soft); font-size: 13px; }
+  #loading { text-align: center; padding: 60px 20px; color: var(--ink-soft); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN GATE -->
+<div id="gate">
+  <div class="seal">C</div>
+  <h1>Registro Iscrizioni</h1>
+  <p>Accedi con l'account Google admin per consultare le registrazioni a Convivio in tempo reale.</p>
+  <button class="btn-google" id="btnLogin">Accedi con Google</button>
+  <p id="denied">Questo account non ha i permessi di amministratore. Verifica di aver fatto login con l'email admin impostata nelle regole Firestore.</p>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header class="top">
+    <div>
+      <div class="brand-mark">Convivio</div>
+      <h1>Registro Iscrizioni</h1>
+    </div>
+    <div class="who">
+      <div id="whoEmail"></div>
+      <button id="btnLogout">esci</button>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="num" id="statTotale">–</div><div class="label">Iscritti totali</div></div>
+    <div class="stat"><div class="num" id="statOggi">–</div><div class="label">Nuovi oggi</div></div>
+    <div class="stat"><div class="num" id="statSettimana">–</div><div class="label">Nuovi 7 giorni</div></div>
+    <div class="stat"><div class="num" id="statCitta">–</div><div class="label">Città attive</div></div>
+  </div>
+
+  <div class="filters">
+    <input type="text" id="searchInput" placeholder="Cerca per nome o email…">
+    <select id="cityFilter"><option value="">Tutte le città</option></select>
+    <div class="count" id="visibleCount"></div>
+  </div>
+
+  <table class="ledger">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Città</th>
+        <th>Iscritto il</th>
+        <th>Ultimo accesso</th>
+        <th>Stato</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+  <div id="empty">Nessuna registrazione trovata con questi filtri.</div>
+</div>
+
+<div id="loading">Connessione a Firebase…</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import {
+    getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import {
+    getFirestore, collection, query, orderBy, onSnapshot
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  // --- INSERISCI QUI LO STESSO firebaseConfig usato nell'integrazione del sito ---
+  const firebaseConfig = {
+ apiKey: "AIzaSyCg4RgWKVER2-gZJNi7xvV0yEk60JC1HX4",
+  authDomain: "convivio-f3fb8.firebaseapp.com",
+  projectId: "convivio-f3fb8",
+  storageBucket: "convivio-f3fb8.firebasestorage.app",
+  messagingSenderId: "430002485006",
+  appId: "1:430002485006:web:f1ced519aaf2fde082495f",
+  measurementId: "G-PN1R2BGPCD",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  const gate = document.getElementById("gate");
+  const appEl = document.getElementById("app");
+  const loading = document.getElementById("loading");
+  const denied = document.getElementById("denied");
+
+  document.getElementById("btnLogin").addEventListener("click", () => {
+    denied.style.display = "none";
+    signInWithPopup(auth, provider).catch(err => console.error(err));
+  });
+  document.getElementById("btnLogout").addEventListener("click", () => signOut(auth));
+
+  let allUsers = [];
+  let unsubscribe = null;
+
+  onAuthStateChanged(auth, (user) => {
+    loading.style.display = "none";
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+
+    if (!user) {
+      gate.style.display = "flex";
+      appEl.style.display = "none";
+      return;
+    }
+
+    // La vera protezione è nelle regole Firestore: se questo utente non è
+    // l'admin, la query sotto fallirà con "permission-denied" e mostriamo l'errore.
+    document.getElementById("whoEmail").textContent = user.email;
+    gate.style.display = "none";
+    appEl.style.display = "block";
+
+    const q = query(collection(db, "users"), orderBy("dataRegistrazione", "desc"));
+    unsubscribe = onSnapshot(q, (snapshot) => {
+      allUsers = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      populateCityFilter(allUsers);
+      render();
+    }, (err) => {
+      console.error(err);
+      if (err.code === "permission-denied") {
+        appEl.style.display = "none";
+        gate.style.display = "flex";
+        denied.style.display = "block";
+        signOut(auth);
+      }
+    });
+  });
+
+  function fmtDate(ts) {
+    if (!ts) return "—";
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" });
+  }
+
+  function isWithinDays(ts, days) {
+    if (!ts) return false;
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return (Date.now() - d.getTime()) <= days * 24 * 60 * 60 * 1000;
+  }
+
+  function populateCityFilter(users) {
+    const select = document.getElementById("cityFilter");
+    const current = select.value;
+    const cities = [...new Set(users.map(u => u.citta).filter(Boolean))].sort();
+    select.innerHTML = '<option value="">Tutte le città</option>' +
+      cities.map(c => `<option value="${c}">${c}</option>`).join("");
+    select.value = current;
+  }
+
+  document.getElementById("searchInput").addEventListener("input", render);
+  document.getElementById("cityFilter").addEventListener("change", render);
+
+  function render() {
+    const searchTerm = document.getElementById("searchInput").value.trim().toLowerCase();
+    const cityTerm = document.getElementById("cityFilter").value;
+
+    const filtered = allUsers.filter(u => {
+      const matchesSearch = !searchTerm ||
+        (u.nome || "").toLowerCase().includes(searchTerm) ||
+        (u.email || "").toLowerCase().includes(searchTerm);
+      const matchesCity = !cityTerm || u.citta === cityTerm;
+      return matchesSearch && matchesCity;
+    });
+
+    // Stats (sempre su tutto il dataset, non sul filtrato)
+    document.getElementById("statTotale").textContent = allUsers.length;
+    document.getElementById("statOggi").textContent =
+      allUsers.filter(u => isWithinDays(u.dataRegistrazione, 1)).length;
+    document.getElementById("statSettimana").textContent =
+      allUsers.filter(u => isWithinDays(u.dataRegistrazione, 7)).length;
+    document.getElementById("statCitta").textContent =
+      new Set(allUsers.map(u => u.citta).filter(Boolean)).size;
+
+    document.getElementById("visibleCount").textContent =
+      `${filtered.length} di ${allUsers.length} mostrati`;
+
+    const tbody = document.getElementById("tableBody");
+    const emptyEl = document.getElementById("empty");
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = "";
+      emptyEl.style.display = "block";
+      return;
+    }
+    emptyEl.style.display = "none";
+
+    tbody.innerHTML = filtered.map(u => {
+      const isNew = isWithinDays(u.dataRegistrazione, 3);
+      return `
+        <tr>
+          <td class="nome">${u.nome || "—"}<span class="email">${u.email || ""}</span></td>
+          <td>${u.citta || "—"}</td>
+          <td>${fmtDate(u.dataRegistrazione)}</td>
+          <td>${fmtDate(u.ultimoAccesso)}</td>
+          <td><span class="stamp ${isNew ? "nuovo" : "attivo"}">${isNew ? "NUOVO" : "OK"}</span></td>
+        </tr>`;
+    }).join("");
+  }
+</script>
+
+</body>
+</html>
